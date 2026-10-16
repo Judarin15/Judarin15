@@ -1,0 +1,44 @@
+name: RINCÓN/OS
+
+# Actualiza las estadísticas y la serpiente de contribuciones del perfil.
+on:
+  schedule:
+    - cron: "17 11 * * *"   # todos los días, 6:17 a. m. hora de Colombia
+  workflow_dispatch:         # botón "Run workflow" en la pestaña Actions
+  push:
+    branches: [main]
+    paths: ["scripts/**", ".github/workflows/rincon-os.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Estadísticas en estilo terminal
+        run: node scripts/stats.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LOGIN: ${{ github.repository_owner }}
+
+      - name: Serpiente de contribuciones en fósforo verde
+        uses: Platane/snk/svg-only@v3
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          outputs: |
+            assets/serpiente.svg?color_snake=#4dff91&color_dots=#0b2817,#11502c,#1d8f4f,#36c476,#4dff91
+
+      - name: Guardar cambios
+        run: |
+          git config user.name "rincon-os-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/estadisticas.svg assets/serpiente.svg
+          git diff --staged --quiet || git commit -m "RINCÓN/OS: actualiza estadísticas"
+          git push
